@@ -7,7 +7,6 @@ import time
 from collections import defaultdict
 
 
-
 driver = webdriver.Chrome()
 
 def get_categories_link():
@@ -33,9 +32,16 @@ def get_subcategories_link(link):
                 EC.presence_of_element_located((By.CLASS_NAME, "jUzyfh"))
             )
     subs_list = subs.find_elements(By.TAG_NAME, 'li')
-    return [item.find_elements(By.TAG_NAME, 'a')[0].get_attribute('href') for item in subs_list]
 
-def get_data(path):
+    href_subcat = []
+    for item in subs_list:
+        h = item.find_elements(By.TAG_NAME, 'a')[0].get_attribute('href')
+        sub_cat = item.find_elements(By.TAG_NAME, 'span')
+        href_subcat.append((h, sub_cat[0].text))
+    return href_subcat
+    # return [item.find_elements(By.TAG_NAME, 'a')[0].get_attribute('href') for item in subs_list]
+
+def get_data(path, sub_category):
     driver.get(path)
 
     data = defaultdict(list)
@@ -74,11 +80,11 @@ def get_data(path):
             try:
                 art.append(float(price))
             except:
-                print("empieza")
+                print(f"Error: price'{price} cannot be converted to float'")
                 print(price)
-                print("acaba")
                 continue
 
+            art.append(sub_category)
             data[t] = art
 
     finally:
@@ -87,8 +93,21 @@ def get_data(path):
 
 if __name__ == "__main__":
     categories_links = get_categories_link()
-    links = []
+    links_subcat = []
     for link in categories_links:
-        links.extend(get_subcategories_link(link))
+        links_subcat.extend(get_subcategories_link(link))
 
-    print(get_data((links[0])))
+    all_data = {}
+    i = 0
+    for path, sub_category in links_subcat:
+        print(i)
+        d = get_data(path, sub_category)
+        i+=1
+
+
+    print(all_data)
+
+    # print(links_subcat)
+    # print(len(links_subcat))
+    # print(links_subcat[0])
+
