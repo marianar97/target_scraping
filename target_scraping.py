@@ -1,10 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from collections import defaultdict
+import pandas as pd
 
 
 driver = webdriver.Chrome()
@@ -19,7 +19,7 @@ def get_categories_link():
     # # get the categories list
     categories_ls = categories.find_elements(By.CLASS_NAME, "cQxfob")
     links = []
-    time.sleep(10)
+    # time.sleep(1)
     for category in categories_ls[1::]:
         cat = category.find_elements(By.TAG_NAME, 'a')
         links.append(cat[0].get_attribute('href'))
@@ -42,6 +42,15 @@ def get_subcategories_link(link):
     # return [item.find_elements(By.TAG_NAME, 'a')[0].get_attribute('href') for item in subs_list]
 
 def get_data(path, sub_category):
+    #Fresh Dips
+    print(sub_category)
+    # if sub_category == 'Fresh Dips' or sub_category == 'Salsas & Hummus':
+    #     print(path)
+    print(path)
+    if ',' in sub_category:
+        sub_category = sub_category.split(",")
+        sub_category = sub_category[0]
+
     driver.get(path)
 
     data = defaultdict(list)
@@ -85,11 +94,25 @@ def get_data(path, sub_category):
                 continue
 
             art.append(sub_category)
-            data[t] = art
+            art.append(0)
+            if len(art) > 3:
+                print(art)
+            data[t] = tuple(art)
+            print(t, data[t])
 
     finally:
-        driver.quit()
+        # time.sleep(1)
         return data
+
+def write_to_file(data):
+    f = open('prices2.csv', 'w')
+
+    f.write('name, price, category, quantity\n')
+    for key, item in data.items():
+        key = key.replace(",", "")
+        f.write(key + "," + str(item[0]) + "," + str(item[1]) + "," + str(item[2]) + "\n")
+
+    f.close()
 
 if __name__ == "__main__":
     categories_links = get_categories_link()
@@ -97,17 +120,18 @@ if __name__ == "__main__":
     for link in categories_links:
         links_subcat.extend(get_subcategories_link(link))
 
+    links_subcat = links_subcat[2::]
     all_data = {}
-    i = 0
+    # i = 0
     for path, sub_category in links_subcat:
-        print(i)
-        d = get_data(path, sub_category)
-        i+=1
+        # print(i)
+        all_data.update(get_data(path, sub_category))
+        # i+=1
+        # if i == 1:
+        #     break
 
-
+    print("\n"*5)
+    print("HERE")
     print(all_data)
-
-    # print(links_subcat)
-    # print(len(links_subcat))
-    # print(links_subcat[0])
+    write_to_file(all_data)
 
